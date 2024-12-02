@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { Network } from '@awesome-cordova-plugins/network/ngx';
 
 @Component({
   selector: 'app-home',
@@ -31,7 +32,7 @@ export class HomePage {
   searchTerm: string = '';
   sortOrder: 'asc' | 'desc' = 'asc';
 
-  constructor() {
+  constructor(private network: Network) {
     this.eventos = [...this.originalEventos];
   }
 
@@ -59,7 +60,7 @@ export class HomePage {
     const imagen = imagenInput.files ? imagenInput.files[0] : null;
 
     if (!imagen) {
-      alert('Por favor selecciona una imagen.');
+      alert('Selecciona una imagen');
       return;
     }
 
@@ -75,10 +76,15 @@ export class HomePage {
       };
       this.originalEventos.push(nuevoEvento);
       this.searchEvents();
+      this.clearEventForm();
       this.showAddOverlay = false;
     };
 
     reader.readAsDataURL(imagen);
+  }
+
+  clearEventForm() {
+    this.eventos = [...this.originalEventos];
   }
 
   editarEvento(index: number) {
@@ -191,8 +197,13 @@ export class HomePage {
   }
 
   sincronizar() {
-    if (this.wifi || this.movil) {
-      this.showSyncMessage = true;
+    this.showSyncMessage = true;
+
+    const isConnected =
+      this.network.type !== this.network.Connection.NONE &&
+      this.network.type !== this.network.Connection.UNKNOWN;
+
+    if (isConnected && (this.wifi || this.movil)) {
       this.syncMessage = 'SINCRONIZANDO ESPERE UN MOMENTO...';
 
       setTimeout(() => {
@@ -205,6 +216,14 @@ export class HomePage {
           this.movil = false;
         }, 1500);
       }, 5000);
+    } else {
+      // No hay conexión a internet
+      this.syncMessage = 'SINCRONIZACION FALLIDA, NO HAY CONEXION A INTERNET';
+
+      setTimeout(() => {
+        this.showSyncMessage = false;
+      }, 3000);
     }
+    this.clearEventForm();
   }
 }
