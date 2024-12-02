@@ -1,20 +1,135 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Blank
-    </ion-title>
-  </ion-toolbar>
-</ion-header>
+<div class="header">
+  <p>Ev</p>
+  <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#f2f2f2"><title fill="#f2f2f2">Dart</title><path d="M4.105 4.105S9.158 1.58 11.684.316a3.079 3.079 0 0 1 1.481-.315c.766.047 1.677.788 1.677.788L24 9.948v9.789h-4.263V24H9.789l-9-9C.303 14.5 0 13.795 0 13.105c0-.319.18-.818.316-1.105l3.789-7.895zm.679.679v11.787c.002.543.021 1.024.498 1.508L10.204 23h8.533v-4.263L4.784 4.784zm12.055-.678c-.899-.896-1.809-1.78-2.74-2.643-.302-.267-.567-.468-1.07-.462-.37.014-.87.195-.87.195L6.341 4.105l10.498.001z" fill="#f2f2f2"/></svg>
+  <p>nts</p>
+</div>
 
 <ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+  <ion-searchbar [animated]="true" placeholder="Buscar Evento" [(ngModel)]="searchTerm" (ionChange)="searchEvents()"></ion-searchbar>
+  <div class="filter-container">
+    <label for="filtro">Ordenar de </label>
+    <select name="" id="filtro" (change)="changeSortOrder()">
+      <option value="asc">A > Z</option>
+      <option value="desc">Z > A</option>
+    </select>
   </div>
+
+  <!-- EVENTOS -->
+  <ion-card class="main" *ngFor="let evento of eventos; let i = index">
+    <div style="display: flex;">
+      <img [src]="evento.img" alt="Imagen del evento">
+      <div class="card-content">
+        <div>
+          <ion-card-title>{{ evento.title }}</ion-card-title>
+          <ion-card-subtitle>{{ evento.description }}</ion-card-subtitle>
+          <ion-card-content>
+            <p class="date"><ion-icon name="calendar-outline"></ion-icon> {{ evento.date }}</p>
+            <p class="place"><ion-icon name="pin-outline"></ion-icon> {{ evento.place }}</p>
+          </ion-card-content>
+        </div>
+      </div>
+    </div>
+    <div class="button-container">
+      <button (click)="editarEvento(i)">Editar</button>
+      <button style="background: transparent; border: 1px solid #5418a7;" (click)="borrarEvento(i)">Borrar</button>
+      <button (click)="shareWsp(evento)" style="padding: 10px 20px;"><ion-icon name="share-social-outline"></ion-icon></button>
+    </div>
+  </ion-card>
+
+  <!-- MENÚ AGREGAR -->
+  <div class="overlay-add" *ngIf="showAddOverlay">
+    <ion-card class="add-container">
+      <button class ="close-button" (click)="closeAddOverlay($event)">
+        <ion-icon name="close"></ion-icon>
+      </button>
+      <h1>Agregar Evento</h1>
+      <form #eventoForm="ngForm">
+        <label for="titulo">Título <span class="required">(requerido)</span></label>
+        <input #titulo type="text" id="titulo" name="titulo" placeholder="Título del Evento" required>
+
+        <label for="descripcion">Descripción <span class="required">(máximo 200 letras)</span></label>
+        <textarea #descripcion name="descripcion" maxlength="300" placeholder="Descripción del Evento"></textarea>
+
+        <label for="fecha">Fecha <span class="required">(requerido)</span></label>
+        <input #fecha type="datetime-local" id="fecha" name="fecha" required>
+
+        <label for="localizacion">Localización</label>
+        <input #localizacion type="text" id="localizacion" name="localizacion" placeholder="Ubicación del evento">
+
+        <label for="imagen">Imagen <span class="required">(requerido)</span></label>
+        <input #imagen type="file" id="imagen" name="imagen" accept="image/*" required>
+
+        <button type="submit"
+                (click)="agregarEvento(titulo.value, descripcion.value, fecha.value, localizacion.value, imagen)">
+          Crear Evento
+        </button>
+      </form>
+    </ion-card>
+  </div>
+
+  <!-- MENU DE EDITAR -->
+  <div class="overlay-edit" *ngIf="showEditOverlay">
+    <ion-card class="edit-container">
+      <button class="close-button" (click)="closeEditOverlay($event)">
+        <ion-icon name="close"></ion-icon>
+      </button>
+      <h1>Editar Evento</h1>
+      <form #eventoForm="ngForm">
+        <label for="titulo">Título <span class="required">(requerido)</span></label>
+        <input #titulo type="text" id="titulo" name="titulo" [(ngModel)]="editEventData.title" placeholder="Título del Evento" required>
+
+        <label for="descripcion">Descripción <span class="required">(máximo 200 letras)</span></label>
+        <textarea #descripcion name="descripcion" [(ngModel)]="editEventData.description" maxlength="300" placeholder="Descripción del Evento"></textarea>
+
+        <label for="fecha">Fecha <span class="required">(requerido)</span></label>
+        <input #fecha type="datetime-local" id="fecha" name="fecha" [(ngModel)]="editEventData.date" required>
+
+        <label for="localizacion">Localización</label>
+        <input #localizacion type="text" id="localizacion" name="localizacion" [(ngModel)]="editEventData.place" placeholder="Localización del Evento">
+
+        <label for="imagen">Imagen</label>
+        <input #imagenInput type="file" id="imagen" name="imagen">
+
+        <button type="button" (click)="guardarEdicion(titulo.value, descripcion.value, fecha.value, localizacion.value, imagenInput)">Guardar</button>
+      </form>
+    </ion-card>
+  </div>
+
+  <!-- MENU SINCRONIZAR -->
+  <div *ngIf="showSyncOverlay" class="overlay-sync" (click)="closeSyncOverlay($event)">
+    <ion-card class="sync-container" (click)="preventClose($event)">
+      <button class="close-button" (click)="closeSyncOverlay($event)">
+        <ion-icon name="close"></ion-icon>
+      </button>
+      <h1>SINCRONIZAR</h1>
+      <p>Selecciona la opción de red con la que deseas sincronizar tus eventos</p>
+      <div class="sync-checkbox">
+        <ion-item>
+          <ion-label><ion-icon style="margin-right: 0.5rem;" name="wifi-outline"></ion-icon>Wifi</ion-label>
+          <ion-checkbox [(ngModel)]="wifi" (ionChange)="onCheckboxChange('wifi')"></ion-checkbox>
+        </ion-item>
+        <ion-item>
+          <ion-label><ion-icon style="margin-right: 0.5rem;" name="stats-chart-outline"></ion-icon>Red Móvil</ion-label>
+          <ion-checkbox [(ngModel)]="movil" (ionChange)="onCheckboxChange('movil')"></ion-checkbox>
+        </ion-item>
+      </div>
+      <div *ngIf="showSyncMessage" class="sincronizando">
+        <ion-icon name="sync"></ion-icon>
+        <p>{{ syncMessage }}</p>
+      </div>
+      <button style="color: #f2f2f2;" (click)="sincronizar()" [disabled]="!wifi && !movil">
+        <ion-icon name="sync"></ion-icon>SINCRONIZAR AHORA
+      </button>
+    </ion-card>
+  </div>
+
+  <!-- BOTON DE AGREGAR -->
+  <button class="buttons-bot" style="left: 20px" (click)="openAddOverlay()">
+    <ion-icon name="add"></ion-icon>
+  </button>
+
+  <!-- BOTON DE SYNC -->
+  <button class="buttons-bot" style="right: 20px" (click)="openSyncOverlay()">
+    <ion-icon name="sync"></ion-icon>
+  </button>
 </ion-content>
